@@ -1,9 +1,6 @@
 name: Build Android APK
-
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
     branches: [ main, master ]
 
 jobs:
@@ -13,25 +10,27 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # 1. Setup Python
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
+      # 2. Install Buildozer and Linux dependencies
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libltdl-dev libffi-dev libssl-dev python3-dev
+          pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
+      # 3. The actual build command (This takes about 10-15 mins)
       - name: Build with Buildozer
-        # We use strict version pinning for stability if needed, 
-        # but standard buildozer android command usually works.
-        run: |
-          yes | buildozer android debug
+        run: buildozer android debug
 
+      # 4. Upload the APK so you can download it
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
+          name: app-package
           path: bin/*.apk
