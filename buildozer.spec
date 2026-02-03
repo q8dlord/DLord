@@ -26,7 +26,7 @@ requirements = python3,kivy,flask,requests,android,jnius,openssl,sqlite3
 # source.include_patterns = assets/*,images/*.png
 
 # (list) Permissions
-android.permissions = INTERNET
+android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE
 
 # (int) Target Android API, should be as high as possible (usually 33+)
 android.api = 33
