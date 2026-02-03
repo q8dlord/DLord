@@ -15,11 +15,10 @@ source.dir = .
 # (list) Source files to include (let empty to include all the files)
 source.include_exts = py,png,jpg,kv,atlas,html,css,js,txt
 
-# (str) Application versioning (THIS WAS MISSING)
+# (str) Application versioning
 version = 0.1
 
 # (list) Application requirements
-# I kept your specific list here so your app works correctly
 requirements = python3,kivy,flask,requests,duckduckgo_search==5.3.1,android,jnius,certifi,urllib3,idna,charset_normalizer,brotli,click,itsdangerous,jinja2,markupsafe,werkzeug,lxml,platformdirs
 
 # (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
@@ -39,6 +38,9 @@ android.minapi = 21
 
 # (str) The Android arch to build for
 android.archs = arm64-v8a
+
+# (bool) Accept SDK license agreements automatically (THIS FIXES YOUR ERROR)
+android.accept_sdk_license = True
 
 [buildozer]
 
