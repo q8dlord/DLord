@@ -1,0 +1,3 @@
+flask
+duckduckgo_search
+requests
