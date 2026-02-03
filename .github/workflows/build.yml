@@ -24,7 +24,7 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
-      # 3. The actual build command (This takes about 10-15 mins)
+      # 3. The actual build command
       - name: Build with Buildozer
         run: buildozer android debug
 
