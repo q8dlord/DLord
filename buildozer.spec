@@ -20,7 +20,9 @@ source.include_exts = py,png,jpg,kv,atlas,html,css,js,txt
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,flask,requests,android,jnius,openssl,sqlite3
+# (list) Application requirements
+# comma separated e.g. requirements = sqlite3,kivy
+requirements = python3,kivy,flask,requests,android,jnius,openssl,sqlite3,werkzeug==2.3.7
 
 # (str) Custom source folders to include in the package
 # source.include_patterns = assets/*,images/*.png
