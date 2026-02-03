@@ -19,6 +19,7 @@ source.include_exts = py,png,jpg,kv,atlas,html,css,js,txt
 version = 0.1
 
 # (list) Application requirements
+# I kept your exact list here
 requirements = python3,kivy,flask,requests,duckduckgo_search==5.3.1,android,jnius,certifi,urllib3,idna,charset_normalizer,brotli,click,itsdangerous,jinja2,markupsafe,werkzeug,lxml,platformdirs
 
 # (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
@@ -39,8 +40,12 @@ android.minapi = 21
 # (str) The Android arch to build for
 android.archs = arm64-v8a
 
-# (bool) Accept SDK license agreements automatically (THIS FIXES YOUR ERROR)
+# (bool) Accept SDK license agreements automatically
 android.accept_sdk_license = True
+
+# (str) Android Build Tools version to use (THIS IS THE FIX)
+# We force version 34.0.0 because version 36 is breaking the build
+android.build_tools_version = 34.0.0
 
 [buildozer]
 
