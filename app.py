@@ -1,8 +1,9 @@
 import os
 import requests
 import uuid
+import re
+import json
 from flask import Flask, render_template, request, jsonify, Response
-from duckduckgo_search import DDGS
 from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
@@ -14,6 +15,82 @@ if not os.path.exists(DOWNLOAD_FOLDER):
 # Global cache for search generators
 # format: { 'uuid': generator_object }
 SEARCH_SESSIONS = {}
+
+class BingImageSearch:
+    def __init__(self, query):
+        self.query = query
+        self.offset = 1  # Bing starts at 1
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        # We need to fetch batches. 
+        # Since this iterator is called one by one, we should buffer results.
+        # But for simplicity, we can fetch on demand if the buffer is empty.
+        # However, the previous architecture expected a generator that yields individual items.
+        # Let's implement that properly.
+        if not hasattr(self, '_buffer'):
+            self._buffer = []
+        
+        while not self._buffer:
+            new_results = self._fetch_more()
+            if not new_results:
+                raise StopIteration
+            self._buffer.extend(new_results)
+        
+        return self._buffer.pop(0)
+
+    def _fetch_more(self):
+        # Limit to 1000 results to avoid infinite loops behaving badly
+        if self.offset > 1000:
+            return []
+
+        url = "https://www.bing.com/images/search"
+        params = {
+            'q': self.query,
+            'form': 'HDRSC2',
+            'first': self.offset,
+            'scenario': 'ImageBasicHover'
+        }
+        
+        try:
+            print(f"Fetching Bing offset {self.offset}...")
+            resp = requests.get(url, params=params, headers=self.headers, timeout=10)
+            
+            # Extract links
+            # Bing behavior: murl matches
+            links = re.findall(r'murl&quot;:&quot;([^&]+)&quot;', resp.text)
+            if not links:
+                 links = re.findall(r'"murl":"([^"]+)"', resp.text)
+            
+            # Also try to extract titles/source if possible, but links are priority
+            # For simplest regex, we just get links.
+            
+            formatted_results = []
+            for link in links:
+                formatted_results.append({
+                    'image': link,
+                    'thumbnail': link, # Use same for now, or finding turl is harder with regex
+                    'title': 'Image',
+                    'source': 'Bing',
+                    'url': link,
+                    'width': 0,
+                    'height': 0
+                })
+            
+            if not formatted_results:
+                return []
+                
+            self.offset += len(formatted_results)
+            return formatted_results
+            
+        except Exception as e:
+            print(f"Bing search error: {e}")
+            return []
 
 @app.route('/')
 def index():
@@ -35,6 +112,8 @@ def get_next_batch(gen, count=30):
             })
     except StopIteration:
         pass
+    except Exception as e:
+        print(f"Error iterating: {e}")
     return results
 
 @app.route('/api/search', methods=['GET'])
@@ -46,35 +125,20 @@ def search_images():
         return jsonify({'error': 'No query provided'}), 400
 
     try:
-        ddgs = DDGS()
-        
         # Handle custom high-res triggers
-        search_size = size
         search_query = query
-        
         if size in ['2k', '4k', '8k']:
             search_query = f"{query} {size} wallpaper"
-            search_size = "Wallpaper" 
             
-        # The library returns a list even with max_results=None
-        # We fetch a large batch (e.g. 500) and then iterate over it
-        ddgs_results = ddgs.images(
-            keywords=search_query,
-            region="wt-wt",
-            safesearch="off",
-            size=search_size if search_size else None,
-            max_results=500, # Fetch a reasonable upper limit
-        )
-        
-        # Convert list to iterator so our get_next_batch logic works
-        ddgs_gen = iter(ddgs_results)
+        # Create Bing generator
+        bing_gen = BingImageSearch(search_query)
         
         # Create session
         session_id = str(uuid.uuid4())
-        SEARCH_SESSIONS[session_id] = ddgs_gen
+        SEARCH_SESSIONS[session_id] = bing_gen
         
         # Get first batch
-        results = get_next_batch(ddgs_gen, count=30)
+        results = get_next_batch(bing_gen, count=30)
             
     except Exception as e:
         print(f"Search error: {e}")
